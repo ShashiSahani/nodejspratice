@@ -180,13 +180,63 @@
 //     res.status(201).json(newUser);
 // });
 
-const { error } = require("console");
-const express = require("express");
-const fs = require("fs");
-const path = require("path");
-const app = express();
-const port = 3030;
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// const express = require("express");
+// const mongoose=require("mongoose");
+
+// const fs = require("fs");
+// const path = require("path");
+// const app = express();
+// const port = 3030;
+
+
+
+
+mongoose.connect('mongodb://127.0.0.1:27017/youtube-app-1')
+.then(()=>console.log("MongoDB connected"))
+.catch((err)=>console.log("Mongo DB Error",err))
+//User Schema
+//user ki schema bana hoga jisme hame uski type btana and require vo sari field rakhna hoga
+
+const userSchema =new mongoose.Schema({
+  name:{
+    type:String,
+    require:true,
+  }
+
+})
+
+const User =mongoose.model("user",userSchema)
 // Middleware for parsing request bodies
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
@@ -221,7 +271,11 @@ app.get("/api/users/:id", (req, res) => {
 
 // Route to add a new user
 app.post("/api/users", (req, res) => {
+ 
   const body = req.body;
+  if(!body|| !body.name){
+    return res.status(400).json({msg:"all field are required.."})
+  }  
   users.push({ ...body, id: users.length + 1 });
 
   // Write data to file
