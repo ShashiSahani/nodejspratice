@@ -209,6 +209,9 @@ app.get("/api/users", (req, res) => {
   res.json(users);
 });
 
+//ager apko setHeader ka response dekhna hai to postman mai jake header option ko select karke 
+//usper info icon per cursor le jana tub apko custome header ha option dikhega
+
 // Route to get a specific user by ID
 app.get("/api/users/:id", (req, res) => {
   const user = users.find((u) => u.id === parseInt(req.params.id));
