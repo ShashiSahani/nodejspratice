@@ -180,63 +180,34 @@
 //     res.status(201).json(newUser);
 // });
 
+const express = require("express");
+const mongoose = require("mongoose");
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// const express = require("express");
-// const mongoose=require("mongoose");
-
-// const fs = require("fs");
-// const path = require("path");
-// const app = express();
-// const port = 3030;
-
-
-
-
-mongoose.connect('mongodb://127.0.0.1:27017/youtube-app-1')
-.then(()=>console.log("MongoDB connected"))
-.catch((err)=>console.log("Mongo DB Error",err))
+const fs = require("fs");
+const path = require("path");
+const app = express();
+const port = 3030;
+// yaha humne mongodb ka connection kiya hai
+mongoose
+  .connect("mongodb://127.0.0.1:27017/youtube-app-1")
+  .then(() => console.log("MongoDB connected"))
+  .catch((err) => console.log("Mongo DB Error", err));
 //User Schema
 //user ki schema bana hoga jisme hame uski type btana and require vo sari field rakhna hoga
 
-const userSchema =new mongoose.Schema({
-  name:{
-    type:String,
-    require:true,
-  }
+const userSchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      require: true,
+    },
+  },
+  { timeStamp: true }
+);
 
-})
+//yaha model banaya hai jisme
 
-const User =mongoose.model("user",userSchema)
+const User = mongoose.model("user", userSchema);
 // Middleware for parsing request bodies
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
@@ -253,75 +224,72 @@ try {
 }
 
 // Route to get all users
-app.get("/api/users", (req, res) => {
-  res.setHeader("X-myName","Shashi sahani")
-  console.log(req.headers)
-  res.json(users);
+app.get("/api/users", async (req, res) => {
+  const allDbuser = await User.find({});
+  const html = `
+
+<ul>
+
+${allDbuser.map((user) => `<li>${user.name}</li>`).join("")}
+</ul>
+`;
+res.send(html)
 });
 
-//ager apko setHeader ka response dekhna hai to postman mai jake header option ko select karke 
+//ager apko setHeader ka response dekhna hai to postman mai jake header option ko select karke
 //usper info icon per cursor le jana tub apko custome header ha option dikhega
 
 // Route to get a specific user by ID
-app.get("/api/users/:id", (req, res) => {
-  const user = users.find((u) => u.id === parseInt(req.params.id));
+app.get("/api/users/:id",async (req, res) => {
+  const user=await User.findById(req.params.id)
+  // const user = users.find((u) => u.id === parseInt(req.params.id));
   if (!user) return res.status(404).json({ message: "User not found" });
   res.json(user);
 });
 
 // Route to add a new user
-app.post("/api/users", (req, res) => {
- 
+app.post("/api/users", async (req, res) => {
   const body = req.body;
-  if(!body|| !body.name){
-    return res.status(400).json({msg:"all field are required.."})
-  }  
-  users.push({ ...body, id: users.length + 1 });
-
-  // Write data to file
-  fs.writeFile(dataFilePath, JSON.stringify(users), (error) => {
-    if (error) {
-      console.error("Error writing file", error);
-      return res
-        .status(500)
-        .json({ status: "error", message: "Internal Server Error" });
-    }
-
-    res.json({ status: "success", id: users.length });
-  });
-});
-
-// update user data by ID
-app.put("/api/users/:id", (req, res) => {
-  const userId = parseInt(req.params.id);
-  const updatedUserData = req.body;
-
-  //find the user by Id
-
-  const userIndex = users.findIndex((u) => u.id === userId);
-  if (userIndex === -1) {
-    return res.status(404).json({ message: "User not found" });
+  if (!body || !body.name) {
+    return res.status(400).json({ msg: "all field are required----.." });
   }
-
-  //update user data
-
-  users[userIndex] = { ...users[userIndex], ...updatedUserData };
-
-  //write updated data to file
-
-  fs.writeFile(dataFilePath, JSON.stringify(users), (error) => {
-    if (error) {
-      console.error("Error writing file", error);
-      return res
-        .status(500)
-        .json({ status: "error", message: "Internal server error" });
-    }
-    res.json({ status: "success", id: userId });
+  // humne jo user object banaya uska hum awit ke shat pass karege
+  const result = await User.create({
+    name: body.name,
   });
+  console.log("result", result);
+  return res.status(201).json({ msg: "success" });
 });
-app.put("/api/users/:id", (req, res) => {
-  const userId = parseInt(req.params.id);
-});
+app.patch('/api/users/:id',async(req,res)=>{
+  try {
+    await User.findByIdAndUpdate(req.params.id,{name:"Changed"});
+    return res.json({status:"Success"})
+    
+  } catch (error) {
+    console.log('Error updating user',error);
+    return res.status(500).json({status:"error",message:"Internal server error"})
+  }
+})
+
+app.put("/api/users/:id",async(req,res)=>{
+  const userId=req.params.id;
+
+  const updatedUserData=req.body;
+
+  try {
+    const user=await User.findByIdAndUpdate(userId,updatedUserData,{new:true});
+    if(!user){
+      return res.status(404).json({message:"User not found"});
+    }
+    return res.json({status:"sucess",user})
+    
+  } catch (error) {
+   console.error("Error", error);
+   return res.status(500).json({status:"Error" ,message:"Internal server Error"})
+  }
+})
+// update user data by ID
+
 // Start the server
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
