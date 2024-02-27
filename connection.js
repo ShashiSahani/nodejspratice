@@ -1,12 +1,26 @@
+const mongoose=require('mongoose');
+const dbURL="mongodb://127.0.0.1:27017/olymics"
+mongoose.connect(dbURL).then(()=>{
+    console.log("Connected to MongoDB successfully!")
+}).catch((error)=>{
+    console.log("Error connection to the database:",error)
+})
 
-const mongoose=require("mongoose");
+mongoose.connection.on('connected',()=>{
+    console.log("MongoDB connection established!");
+})
 
+mongoose.connection.on('error',(err)=>{
+    console.error('MongoDb connection Error:',err)
+})
 
-async function connectMongoDB(url){
-  return  mongoose.connect(url)
+mongoose.connection.on('disconnected',()=>{
+    console.log("MongoDB disconnected");
+})
 
-}
-// yaha humne mongodb ka connection kiya hai
- module.exports={
-    connectMongoDB,
- }
+process.on('SIGINT',()=>{
+    mongoose.connection.close(()=>{
+        console.log("MongoDB connection closed through app termination");
+        process.exit(0)
+    })
+})
